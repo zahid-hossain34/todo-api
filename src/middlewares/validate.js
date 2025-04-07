@@ -1,4 +1,5 @@
 const { body, param, validationResult } = require('express-validator');
+const { ObjectId } = require('mongodb');
 
 const validateTodo = [
   body('title')
@@ -28,13 +29,18 @@ const validateTodo = [
 
 const validateId = [
   param('id')
-    .isInt({ min: 1 }).withMessage('ID must be a positive integer'),
+    .custom(value => ObjectId.isValid(value))
+    .withMessage('Invalid ID: must be a valid MongoDB ObjectId'),
   (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ success: false, message: errors.array().map(err => err.msg).join(', '), data: null });
+      return res.status(400).json({ 
+        success: false, 
+        message: errors.array().map(err => err.msg).join(', '), 
+        data: null 
+      });
     }
-    req.validatedId = parseInt(req.params.id, 10);
+    req.validatedId = req.params.id; // Keep as string
     next();
   }
 ];

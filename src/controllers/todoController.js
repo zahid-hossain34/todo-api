@@ -5,9 +5,15 @@ const todoController = {
   async getAllTodos(req, res) {
     try {
       const { completed, sort, order, page, limit } = req.query;
-      const result = await TodoService.getAllTodos({ completed, sort, order, page, limit });
-      const message = result.total === 0 ? 'No todos found yet' : 'Todos retrieved successfully';
-      sendResponse(res, 200, result, message);
+      const { todos, page: pageNum, limit: limitNum, total } = await TodoService.getAllTodos({ 
+        completed, 
+        sort, 
+        order, 
+        page, 
+        limit 
+      });
+      const message = todos.length === 0 ? 'No todos found yet' : 'Todos retrieved successfully';
+      sendResponse(res, 200, todos, message, pageNum, limitNum, total);
     } catch (error) {
       sendResponse(res, 500, null, `Server error: ${error.message}`);
     }
@@ -16,7 +22,9 @@ const todoController = {
   async getTodoById(req, res) {
     try {
       const todo = await TodoService.getTodoById(req.validatedId);
-      if (!todo) return sendResponse(res, 404, null, 'Todo not found');
+      if (!todo) {
+        return sendResponse(res, 404, null, `Todo with ID ${req.validatedId} not found`);
+      }
       sendResponse(res, 200, todo, 'Todo retrieved successfully');
     } catch (error) {
       sendResponse(res, 500, null, `Server error: ${error.message}`);
@@ -44,6 +52,7 @@ const todoController = {
       if (req.body.completed !== undefined) updateData.completed = req.body.completed;
 
       const updatedTodo = await TodoService.updateTodo(req.validatedId, updateData);
+      
       if (!updatedTodo) return sendResponse(res, 404, null, 'Todo not found');
       sendResponse(res, 200, updatedTodo, 'Todo updated successfully');
     } catch (error) {
@@ -65,7 +74,7 @@ const todoController = {
     try {
       const deleted = await TodoService.deleteTodo(req.validatedId);
       if (!deleted) return sendResponse(res, 404, null, 'Todo not found');
-      sendResponse(res, 204, null, '');
+      sendResponse(res, 200, null, 'Todo deleted successfully');
     } catch (error) {
       sendResponse(res, 500, null, `Server error: ${error.message}`);
     }

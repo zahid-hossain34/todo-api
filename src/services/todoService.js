@@ -1,87 +1,90 @@
-const fs = require('fs').promises;
-const path = require('path');
+const { MongoClient, ObjectId } = require('mongodb');
 const config = require('../config');
 
-const DATA_FILE = path.resolve(config.dataFile);
-
 class TodoService {
-  async loadTodos() {
-    try {
-      const data = await fs.readFile(DATA_FILE, 'utf8');
-      if (!data.trim()) return []; // Empty file or whitespace
-      return JSON.parse(data);
-    } catch (error) {
-      if (error.code === 'ENOENT') return []; // File doesn't exist
-      throw new Error(`Failed to parse todos.json: ${error.message}`); // Specific error for invalid JSON
+  constructor() {
+    this.client = new MongoClient(config.mongodbUri);
+    this.db = null;
+    this.todosCollection = null;
+  }
+
+  async connect() {
+    if (!this.db) {
+      await this.client.connect();
+      this.db = this.client.db('todo-api');
+      this.todosCollection = this.db.collection('todos');
     }
   }
 
-  async saveTodos(todos) {
-    await fs.writeFile(DATA_FILE, JSON.stringify(todos, null, 2), 'utf8');
+  async close() {
+    if (this.client) {
+      await this.client.close();
+      this.db = null;
+      this.todosCollection = null;
+    }
   }
 
   async getAllTodos({ completed, sort, order = 'asc', page = 1, limit = 10 }) {
-    const todos = await this.loadTodos();
-    let filteredTodos = [...todos];
-
+    await this.connect();
+    let query = {};
     if (completed !== undefined) {
-      filteredTodos = filteredTodos.filter(todo => todo.completed === (completed === 'true'));
+      query.completed = completed === 'true';
     }
 
-    if (sort) {
-      filteredTodos.sort((a, b) => {
-        const valueA = a[sort] || '';
-        const valueB = b[sort] || '';
-        return order === 'asc' ? valueA.localeCompare(valueB) : valueB.localeCompare(valueA);
-      });
-    }
+    const options = {
+      sort: sort ? { [sort]: order === 'asc' ? 1 : -1 } : {},
+      skip: (page - 1) * limit,
+      limit: parseInt(limit)
+    };
 
-    const start = (page - 1) * limit;
-    const end = start + parseInt(limit);
-    const paginatedTodos = filteredTodos.slice(start, end);
+    const todos = await this.todosCollection.find(query, options).toArray();
+    const total = await this.todosCollection.countDocuments(query);
 
     return {
-      todos: paginatedTodos,
-      total: filteredTodos.length,
+      todos,
       page: parseInt(page),
-      limit: parseInt(limit)
+      limit: parseInt(limit),
+      total
     };
   }
 
   async getTodoById(id) {
-    const todos = await this.loadTodos();
-    return todos.find(todo => todo.id === id) || null;
+    await this.connect();
+    const todo = await this.todosCollection.findOne({ _id: new ObjectId(id) });
+    return todo;
   }
 
   async createTodo(todoData) {
-    const todos = await this.loadTodos();
+    await this.connect();
     const newTodo = {
-      id: Date.now(),
       ...todoData,
       completed: false,
       createdAt: new Date().toISOString()
     };
-    todos.push(newTodo);
-    await this.saveTodos(todos);
-    return newTodo;
+    const result = await this.todosCollection.insertOne(newTodo);
+    return { _id: result.insertedId, ...newTodo };
   }
 
   async updateTodo(id, updateData) {
-    const todos = await this.loadTodos();
-    const index = todos.findIndex(todo => todo.id === id);
-    if (index === -1) return null;
-    todos[index] = { ...todos[index], ...updateData, updatedAt: new Date().toISOString() };
-    await this.saveTodos(todos);
-    return todos[index];
+    await this.connect();
+    let objectId;
+    try {
+      objectId = new ObjectId(id);
+    } catch (error) {
+      return null; // Return null if ID is invalid
+    }
+    const result = await this.todosCollection.findOneAndUpdate(
+      { _id: objectId },
+      { $set: { ...updateData, updatedAt: new Date().toISOString() } },
+      { returnDocument: 'after' }
+    );
+    return result; // Updated todo or null
   }
 
   async deleteTodo(id) {
-    const todos = await this.loadTodos();
-    const index = todos.findIndex(todo => todo.id === id);
-    if (index === -1) return false;
-    todos.splice(index, 1);
-    await this.saveTodos(todos);
-    return true;
+    await this.connect();
+    const result = await this.todosCollection.deleteOne({ _id: new ObjectId(id) });
+    return result.deletedCount === 1;
   }
 }
 
