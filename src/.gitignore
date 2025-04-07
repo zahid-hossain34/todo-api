@@ -1,0 +1,43 @@
+# Node.js dependencies
+node_modules/
+npm-debug.log
+yarn-error.log
+package-lock.json  # Optional: Include if you use yarn or want to enforce exact versions locally
+
+# Environment variables
+.env
+
+# Logs
+logs/
+*.log
+
+# Build/Production artifacts
+dist/
+build/
+
+# Data files (if you want to keep them local)
+data/todos.json
+
+# SSL Certificates (sensitive data)
+certs/
+*.key
+*.crt
+*.pem
+
+# Editor/IDE files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# OS-generated files
+.DS_Store
+Thumbs.db
+
+# Testing/Coverage
+coverage/
+*.lcov
+
+# Miscellaneous
+*.swp
+*.bak

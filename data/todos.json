@@ -1,0 +1,18 @@
+[
+  {
+    "id": 1742848887214,
+    "title": "Urgent meeting",
+    "description": "Have an urgent meeting at 6 PM",
+    "completed": false,
+    "createdAt": "2025-03-24T20:41:27.214Z",
+    "updatedAt": "2025-03-24T20:46:11.412Z"
+  },
+  {
+    "id": 1742848977313,
+    "title": "Go to super shop",
+    "description": "Buy some groceries from supper shop. Buy some elctronic items",
+    "completed": true,
+    "createdAt": "2025-03-24T20:42:57.313Z",
+    "updatedAt": "2025-03-24T20:49:05.418Z"
+  }
+]
