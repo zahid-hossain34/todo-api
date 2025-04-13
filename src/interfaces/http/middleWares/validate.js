@@ -16,11 +16,19 @@ const validateTodo = [
   (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ success: false, message: errors.array().map(err => err.msg).join(', '), data: null });
+      return res.status(400).json({
+        success: false,
+        message: errors.array().map(err => err.msg).join(', '),
+        data: null
+      });
     }
     if (req.method === 'POST') {
       if (!req.body.title || !req.body.description) {
-        return res.status(400).json({ success: false, message: 'Title and description are required for POST', data: null });
+        return res.status(400).json({
+          success: false,
+          message: 'Title and description are required for POST',
+          data: null
+        });
       }
     }
     next();
@@ -34,13 +42,13 @@ const validateId = [
   (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ 
-        success: false, 
-        message: errors.array().map(err => err.msg).join(', '), 
-        data: null 
+      return res.status(400).json({
+        success: false,
+        message: errors.array().map(err => err.msg).join(', '),
+        data: null
       });
     }
-    req.validatedId = req.params.id; // Keep as string
+    req.validatedId = req.params.id;
     next();
   }
 ];

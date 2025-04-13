@@ -1,15 +1,15 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
-const todoRoutes = require('./routes/todoRoutes');
-const errorHandler = require('./middlewares/errorHandler');
+const todoRoutes = require('./interfaces/http/routes/todo-routes');
+const errorHandler = require('./interfaces/http/middleWares/error-handler');
 const config = require('./config');
 
 const app = express();
 
 // Middleware
-app.use(helmet()); // Security headers
-app.use(cors({ origin: config.allowedOrigins })); // CORS with allowed origins
+app.use(helmet());
+app.use(cors({ origin: config.allowedOrigins }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
