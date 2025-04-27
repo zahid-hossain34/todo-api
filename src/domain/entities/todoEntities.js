@@ -1,6 +1,8 @@
 class Todo {
-    constructor({ _id, title, description, completed = false, createdAt, updatedAt }) {
+    constructor({ _id, userId, title, description, completed = false, createdAt, updatedAt }) {
+      if (!userId) throw new Error("User ID is required");
       this._id = _id;
+      this.userId = userId;
       this.title = title;
       this.description = description;
       this.completed = completed;
@@ -23,6 +25,7 @@ class Todo {
     toJSON() {
       return {
         _id: this._id,
+        userId: this.userId,
         title: this.title,
         description: this.description,
         completed: this.completed,

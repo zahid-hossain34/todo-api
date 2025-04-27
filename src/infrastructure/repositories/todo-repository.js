@@ -1,10 +1,9 @@
 const { ObjectId } = require('mongodb');
-const Todo = require('../../domain/entities/todo');
+const Todo = require('../../domain/entities/todoEntities');
 const dbService = require('../database/db');
 
 class TodoRepository {
   constructor() {
-    // Bind methods to ensure `this` is always correct
     this.getCollection = this.getCollection.bind(this);
     this.findAll = this.findAll.bind(this);
     this.findById = this.findById.bind(this);
@@ -14,15 +13,17 @@ class TodoRepository {
 
   getCollection() {
     const collection = dbService.getDb().collection('todos');
-    // Debug: Verify collection is valid
     if (!collection.find || !collection.insertOne) {
       throw new Error('Failed to get MongoDB collection');
     }
     return collection;
   }
 
-  async findAll({ completed, sort, order = 'asc', page = 1, limit = 10 }) {
-    const query = completed !== undefined ? { completed: completed === 'true' } : {};
+  async findAll({ userId, completed, sort, order = 'asc', page = 1, limit = 10 }) {
+    const query = { userId: new ObjectId(userId) };
+    if (completed !== undefined) {
+      query.completed = completed === 'true';
+    }
     const options = {
       sort: sort ? { [sort]: order === 'asc' ? 1 : -1 } : {},
       skip: (page - 1) * limit,
@@ -40,14 +41,25 @@ class TodoRepository {
     };
   }
 
-  async findById(id) {
+  async findById(id, userId) {
+    let objectId;
+    try {
+      objectId = new ObjectId(id);
+    } catch (error) {
+      console.error('Invalid ObjectId:', id, error.message);
+      return null;
+    }
     const collection = this.getCollection();
-    const todo = await collection.findOne({ _id: new ObjectId(id) });
+    const todo = await collection.findOne({
+      _id: objectId,
+      userId: new ObjectId(userId)
+    });
     return todo ? new Todo(todo) : null;
   }
 
   async save(todo) {
     const todoData = {
+      userId: new ObjectId(todo.userId),
       title: todo.title,
       description: todo.description,
       completed: todo.completed,
@@ -61,7 +73,7 @@ class TodoRepository {
       todo._id = result.insertedId;
     } else {
       await collection.updateOne(
-        { _id: new ObjectId(todo._id) },
+        { _id: new ObjectId(todo._id), userId: new ObjectId(todo.userId) },
         { $set: todoData }
       );
     }
@@ -69,9 +81,19 @@ class TodoRepository {
     return todo;
   }
 
-  async deleteById(id) {
+  async deleteById(id, userId) {
+    let objectId;
+    try {
+      objectId = new ObjectId(id);
+    } catch (error) {
+      console.error('Invalid ObjectId:', id, error.message);
+      return false;
+    }
     const collection = this.getCollection();
-    const result = await collection.deleteOne({ _id: new ObjectId(id) });
+    const result = await collection.deleteOne({
+      _id: objectId,
+      userId: new ObjectId(userId)
+    });
     return result.deletedCount === 1;
   }
 }

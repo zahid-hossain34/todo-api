@@ -1,8 +1,10 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
-const todoRoutes = require('./interfaces/http/routes/todo-routes');
-const errorHandler = require('./interfaces/http/middleWares/error-handler');
+const todoRoutes = require('./interfaces/routes/todo-routes');
+const userRoutes = require('./interfaces/routes/user-routes');
+const errorHandler = require('./interfaces/middleWares/error-handler');
+const setupSwagger = require('./docs/swagger/swagger');
 const config = require('./config');
 
 const app = express();
@@ -15,6 +17,10 @@ app.use(express.urlencoded({ extended: true }));
 
 // Routes
 app.use('/api/v1', todoRoutes);
+app.use('/api/v1', userRoutes);
+
+// Swagger Documentation
+setupSwagger(app);
 
 // 404 Handler
 app.use((req, res) => {

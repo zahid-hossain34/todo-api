@@ -1,7 +1,7 @@
-const TodoRepository = require('../../../infrastructure/repositories/todo-repository');
+const TodoRepository = require('../../infrastructure/repositories/todo-repository');
 
-async function updateTodoStatus(id, completed) {
-  const todo = await TodoRepository.findById(id);
+async function updateTodoStatus(id, userId, completed) {
+  const todo = await TodoRepository.findById(id, userId);
   if (!todo) {
     throw new Error('Todo not found');
   }
